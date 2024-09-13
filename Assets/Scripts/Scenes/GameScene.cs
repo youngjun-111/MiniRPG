@@ -14,7 +14,7 @@ public class GameScene : BaseScene
     {
         base.Init();
         SceneType = Define.Scene.Game;
-        Managers.UI.ShowSceneUI<UI_Inven>();
+        //Managers.UI.ShowSceneUI<UI_Inven>();
 
         Dictionary<int, Stat> Dict = Managers.Data.StatDict;
         //Temp_유니티쨩 2개 생성
