@@ -35,4 +35,19 @@ public class Define
         Effect,
         MaxCount,//현재 사운드의 갯수를 새기위해서 추가
     }
+
+    public enum PlayerState
+    {
+        Die,
+        Moving,
+        Idle,
+        Skill,
+    }
+
+    public enum Layer
+    {
+        Monster = 8,
+        Ground = 9,
+        Block = 10,
+    }
 }

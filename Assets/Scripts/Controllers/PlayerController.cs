@@ -1,10 +1,12 @@
+using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class PlayerController : MonoBehaviour
 {
     [SerializeField]
-    float _speed = 10f;
-
+    PlayerStat _stat;
     //마우스 방식으로 이동 하기위한 불 변수
     bool _moveToDest = false;
 
@@ -13,8 +15,11 @@ public class PlayerController : MonoBehaviour
     UI_Button uiPopup;
     //float wait_run_ratio = 0;
     Animator anim;
+    NavMeshAgent navAgent;
     void Start()
     {
+        _stat = gameObject.GetOrAddComponent<PlayerStat>();
+        navAgent = gameObject.GetOrAddComponent<NavMeshAgent>();
         anim = GetComponent<Animator>();
         //키보드 이동 인풋 구독
         //Managers.Input.KeyAction -= OnKeyboard;
@@ -41,6 +46,8 @@ public class PlayerController : MonoBehaviour
         //Managers.Resources.Instantiate("UI/UI_Inven");
 
     }
+
+   
     public enum PlayerState
     {
         Die,
@@ -93,19 +100,30 @@ public class PlayerController : MonoBehaviour
             //방향
             Vector3 dir = _destPos - transform.position;
 
+
+           
             //거리 distance
-            if (dir.magnitude < 0.001f)
+            if (dir.magnitude < 0.1f)
             {
                 _state = PlayerState.Idle;
                 _moveToDest = false;
             }
             else
             {
-                float moveDist = Mathf.Clamp(_speed * Time.deltaTime, 0, dir.magnitude);
-                transform.position += dir.normalized * moveDist;
+                float moveDist = Mathf.Clamp(_stat.MoveSpeed * Time.deltaTime, 0, dir.magnitude);
+                //블록레이어 라면 idle로 변경 해줌
+                //즉, 이동 할 수 없는 구역이니까 멈춤
+                if (Physics.Raycast(transform.position, dir, 1f, LayerMask.GetMask("Block")))
+                {
+                    _state = PlayerState.Idle;
+                    return;
+                }
+                Debug.DrawRay(transform.position, dir.normalized, Color.green);
+                //transform.position += dir.normalized * moveDist;
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), 20 * Time.deltaTime);
+                navAgent.Move(dir.normalized * moveDist);
             }
-            anim.SetFloat("speed", _speed);
+            anim.SetFloat("speed", _stat.MoveSpeed);
         }
     }
     void UpdateIdle()
@@ -129,7 +147,7 @@ public class PlayerController : MonoBehaviour
 
             //트렌스레이트(로컬좌표)라서 포지션으로 바꿔줌
             //transform.Translate(Vector3.forward * Time.deltaTime * _speed);
-            transform.position += Vector3.forward * Time.deltaTime * _speed;
+            transform.position += Vector3.forward * Time.deltaTime * _stat.MoveSpeed;
         }
         //후진
         if (Input.GetKey(KeyCode.S))
@@ -141,7 +159,7 @@ public class PlayerController : MonoBehaviour
             //transform.Translate(Vector3.back * Time.deltaTime * _speed);
 
             //트렌스 레이트(로컬좌표)를 포지션으로 바꿔줌
-            transform.position += Vector3.back * Time.deltaTime * _speed;
+            transform.position += Vector3.back * Time.deltaTime * _stat.MoveSpeed;
         }
         //좌
         if (Input.GetKey(KeyCode.A))
@@ -153,7 +171,7 @@ public class PlayerController : MonoBehaviour
             //transform.Translate(Vector3.left *Time.deltaTime * _speed);
 
             //트렌스 레이트(로컬좌표)를 포지션으로 바꿔줌
-            transform.position += Vector3.left * Time.deltaTime * _speed;
+            transform.position += Vector3.left * Time.deltaTime * _stat.MoveSpeed;
         }
         //우
         if (Input.GetKey(KeyCode.D))
@@ -165,10 +183,10 @@ public class PlayerController : MonoBehaviour
             //transform.Translate(Vector3.right * Time.deltaTime * _speed);
 
             //트렌스 레이트(로컬좌표)를 포지션으로 바꿔줌
-            transform.position += Vector3.right * Time.deltaTime * _speed;
+            transform.position += Vector3.right * Time.deltaTime * _stat.MoveSpeed;
         }
         _moveToDest = false;//클릭 방식으로 이동 불가
-        anim.SetFloat("speed", _speed);
+        anim.SetFloat("speed", _stat.MoveSpeed);
 
         if (Input.GetKeyUp(KeyCode.None))
         {
@@ -177,6 +195,7 @@ public class PlayerController : MonoBehaviour
     }
     #endregion
 
+    int _mask = (1 << (int)Define.Layer.Ground | 1 << (int)Define.Layer.Monster);
     #region 마우스 움직임
     void OnMouseClicked(Define.MouseEvent evt)
     {
@@ -194,12 +213,21 @@ public class PlayerController : MonoBehaviour
 
         RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit, 100f, LayerMask.GetMask("Ground")))
+        if (Physics.Raycast(ray, out hit, 100f, _mask))
         {
             _destPos = hit.point;//클릭된 지점을 목적지로 지정
             _state = PlayerState.Moving;
             _moveToDest = true; //클릭 방식으로 이동 가능 하게.
         }
+        if(hit.collider.gameObject.layer == (int)Define.Layer.Monster)
+        {
+            Debug.Log("몬스터");
+        }
+        else if(hit.collider.gameObject.layer == (int)Define.Layer.Ground)
+        {
+            Debug.Log("바닥");
+        }
     }
     #endregion
+
 }
