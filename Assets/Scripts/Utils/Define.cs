@@ -12,7 +12,10 @@ public class Define
 
     public enum MouseEvent
     {
-        Press, Click,
+        Press, 
+        PointerDown,
+        PointerUp,
+        Click,
     }
 
     public enum UIEvent

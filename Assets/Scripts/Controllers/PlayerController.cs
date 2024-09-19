@@ -16,17 +16,31 @@ public class PlayerController : MonoBehaviour
     //float wait_run_ratio = 0;
     Animator anim;
     NavMeshAgent navAgent;
+
+    //Texture2D _attackIcon;
+    //Texture2D _handIcon;
+
+    //enum CursorType
+    //{
+    //    None,
+    //    Attack,
+    //    Hand,
+    //}
+
+    //CursorType _cursorType = CursorType.None;
     void Start()
     {
         _stat = gameObject.GetOrAddComponent<PlayerStat>();
         navAgent = gameObject.GetOrAddComponent<NavMeshAgent>();
         anim = GetComponent<Animator>();
+        //_attackIcon = Managers.Resources.Load<Texture2D>("Texture/Cursor/Attack");
+        //_handIcon = Managers.Resources.Load<Texture2D>("Texture/Cursor/Hand");
         //키보드 이동 인풋 구독
         //Managers.Input.KeyAction -= OnKeyboard;
         //Managers.Input.KeyAction += OnKeyboard;
         //마우스 이동 인풋 구독
-        Managers.Input.MouseAction -= OnMouseClicked;
-        Managers.Input.MouseAction += OnMouseClicked;
+        Managers.Input.MouseAction -= OnMouseEvent_IdleRun;
+        Managers.Input.MouseAction += OnMouseEvent_IdleRun;
 
         //시험 용으로 써본것들 UI는 제대로 나옴
         //for (int i = 0; i < 5; i++)
@@ -47,7 +61,38 @@ public class PlayerController : MonoBehaviour
 
     }
 
-   
+    //새로 스크립트를 작성
+    //void UpdateMouseCursor()
+    //{
+    //    //마우스를 누르고 있으면 변경처리를 하지 않고 그냥 빠져나가면
+    //    //락온 한 상태에서 좌표가 이동돼도 커서가 그대로되어 있게
+    //    if (Input.GetMouseButtonDown(0))
+    //        return;
+
+    //    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+    //    RaycastHit hit;
+
+    //    if (Physics.Raycast(ray, out hit, 100f, _mask))
+    //    {
+    //        if (hit.collider.gameObject.layer == (int)Define.Layer.Monster)
+    //        {
+    //            if (_cursorType != CursorType.Attack)
+    //            {
+    //                Cursor.SetCursor(_attackIcon, new Vector2(_attackIcon.width / 5, 0), CursorMode.Auto);
+    //                _cursorType = CursorType.Attack;
+    //            }
+    //            else
+    //            {
+    //                if(_cursorType != CursorType.Hand)
+    //                {
+    //                    Cursor.SetCursor(_handIcon, new Vector2(_handIcon.width / 3, 0), CursorMode.Auto);
+    //                    _cursorType = CursorType.Hand;
+    //                }
+    //            }
+    //        }
+    //    }
+    //}
     public enum PlayerState
     {
         Die,
@@ -99,9 +144,6 @@ public class PlayerController : MonoBehaviour
         {
             //방향
             Vector3 dir = _destPos - transform.position;
-
-
-           
             //거리 distance
             if (dir.magnitude < 0.1f)
             {
@@ -115,13 +157,17 @@ public class PlayerController : MonoBehaviour
                 //즉, 이동 할 수 없는 구역이니까 멈춤
                 if (Physics.Raycast(transform.position, dir, 1f, LayerMask.GetMask("Block")))
                 {
-                    _state = PlayerState.Idle;
+                    if(Input.GetMouseButton(0) == false)
+                    {
+                        _state = PlayerState.Idle;
+                    }
                     return;
                 }
-                Debug.DrawRay(transform.position, dir.normalized, Color.green);
                 //transform.position += dir.normalized * moveDist;
+
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), 20 * Time.deltaTime);
                 navAgent.Move(dir.normalized * moveDist);
+                Debug.DrawRay(transform.position + Vector3.up * 0.5f, dir.normalized, Color.green);
             }
             anim.SetFloat("speed", _stat.MoveSpeed);
         }
@@ -195,9 +241,10 @@ public class PlayerController : MonoBehaviour
     }
     #endregion
 
+    GameObject _lockTarget;
     int _mask = (1 << (int)Define.Layer.Ground | 1 << (int)Define.Layer.Monster);
     #region 마우스 움직임
-    void OnMouseClicked(Define.MouseEvent evt)
+    void OnMouseEvent_IdleRun(Define.MouseEvent evt)
     {
         //Press일경우는 작동 안되게끔(그냥 임시로 처리할 수 있게..)
         //프레스 기능을 사용하고 싶다면 삭제
@@ -212,6 +259,42 @@ public class PlayerController : MonoBehaviour
         Debug.DrawRay(Camera.main.transform.position, ray.direction * 100f, Color.red, 1f);
 
         RaycastHit hit;
+
+        bool raycastHit = Physics.Raycast(ray, out hit, 100f, _mask);
+
+        switch (evt)
+        {
+            //눌렀을때 히트된게 뭐든 간에 이동은 하게
+            case Define.MouseEvent.PointerDown:
+                if (raycastHit)
+                {
+                    _destPos = hit.point;
+                    _state = PlayerState.Moving;
+                }
+                //충돌한게 몬스터이면 타겟을 몬스터로 그렇지 않으면 타겟 없음
+                if (hit.collider.gameObject.layer == (int)Define.Layer.Monster)
+                    _lockTarget = hit.collider.gameObject;
+                else
+                    _lockTarget = null;
+                break;
+                //누르고 있는데 타겟이 있으면 타겟으로 이동
+            case Define.MouseEvent.Press:
+                if(_lockTarget != null)
+                {
+                    _destPos = _lockTarget.transform.position;
+                }
+                //근데 충돌은 했으면
+                else if (raycastHit)
+                {
+                    //총돌한 곳으로
+                    _destPos = hit.point;
+                }
+                break;
+            case Define.MouseEvent.PointerUp:
+                //마우스를 땟으면 그냥 타겟을 잃어버리게
+                _lockTarget = null;
+                break;
+        }
 
         if (Physics.Raycast(ray, out hit, 100f, _mask))
         {
