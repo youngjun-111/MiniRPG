@@ -22,6 +22,7 @@ public class GameScene : BaseScene
         //{
         //    Managers.Resources.Instantiate("unitychan");
         //}
+        gameObject.GetOrAddComponent<CursorController>();
     }
 
     public override void Clear()

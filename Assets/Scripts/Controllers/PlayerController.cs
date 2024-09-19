@@ -12,11 +12,38 @@ public class PlayerController : MonoBehaviour
 
     Vector3 _destPos;
 
-    UI_Button uiPopup;
+    //UI_Button uiPopup;
     //float wait_run_ratio = 0;
-    Animator anim;
     NavMeshAgent navAgent;
 
+    public PlayerState State
+    {
+        get { return _state; }
+        set
+        {
+            _state = value;
+            Animator anim = GetComponent<Animator>();
+            switch (_state)
+            {
+                case PlayerState.Die:
+                    anim.SetBool("Attack", false);
+                    break;
+                case PlayerState.Idle:
+                    anim.SetFloat("speed", 0);
+                    anim.SetBool("Attack", false);
+                    break;
+                case PlayerState.Moving:
+                    anim.SetFloat("speed", _stat.MoveSpeed);
+                    anim.SetBool("Attack", false);
+                    break;
+                case PlayerState.Skill:
+                    anim.SetBool("Attack", true);
+                    break;
+            }
+        }
+    }
+
+    //커서컴트롤러로 이동
     //Texture2D _attackIcon;
     //Texture2D _handIcon;
 
@@ -32,15 +59,14 @@ public class PlayerController : MonoBehaviour
     {
         _stat = gameObject.GetOrAddComponent<PlayerStat>();
         navAgent = gameObject.GetOrAddComponent<NavMeshAgent>();
-        anim = GetComponent<Animator>();
         //_attackIcon = Managers.Resources.Load<Texture2D>("Texture/Cursor/Attack");
         //_handIcon = Managers.Resources.Load<Texture2D>("Texture/Cursor/Hand");
         //키보드 이동 인풋 구독
         //Managers.Input.KeyAction -= OnKeyboard;
         //Managers.Input.KeyAction += OnKeyboard;
         //마우스 이동 인풋 구독
-        Managers.Input.MouseAction -= OnMouseEvent_IdleRun;
-        Managers.Input.MouseAction += OnMouseEvent_IdleRun;
+        Managers.Input.MouseAction -= OnMouseEvent;
+        Managers.Input.MouseAction += OnMouseEvent;
 
         //시험 용으로 써본것들 UI는 제대로 나옴
         //for (int i = 0; i < 5; i++)
@@ -98,6 +124,7 @@ public class PlayerController : MonoBehaviour
         Die,
         Moving,
         Idle,
+        Skill,
     }
 
     //초기 상태는 무조건 idle
@@ -105,7 +132,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        switch (_state)
+        switch (State)
         {
             case PlayerState.Die:
                 UpdateDie();
@@ -115,6 +142,9 @@ public class PlayerController : MonoBehaviour
                 break;
             case PlayerState.Idle:
                 UpdateIdle();
+                break;
+            case PlayerState.Skill:
+                UpdateSkill();
                 break;
         }
         //키보드 방식이긴 하지만 키입력값을 1과 0으로 줘서 애니메이션을 재생 하려고 할때 쓰인 코드
@@ -140,6 +170,18 @@ public class PlayerController : MonoBehaviour
 
     void UpdateMoving()
     {
+        //몬스터가 내 사정거리보다 가까우면 공격
+        if(_lockTarget != null)
+        {
+            _destPos = _lockTarget.transform.position;
+            float distance = (_destPos - transform.position).magnitude;
+            if(distance <= 1)
+            {
+                State = PlayerState.Skill;
+                return;
+            }
+        }
+
         if (_moveToDest)
         {
             //방향
@@ -147,7 +189,7 @@ public class PlayerController : MonoBehaviour
             //거리 distance
             if (dir.magnitude < 0.1f)
             {
-                _state = PlayerState.Idle;
+                State = PlayerState.Idle;
                 _moveToDest = false;
             }
             else
@@ -159,7 +201,7 @@ public class PlayerController : MonoBehaviour
                 {
                     if(Input.GetMouseButton(0) == false)
                     {
-                        _state = PlayerState.Idle;
+                        State = PlayerState.Idle;
                     }
                     return;
                 }
@@ -169,12 +211,27 @@ public class PlayerController : MonoBehaviour
                 navAgent.Move(dir.normalized * moveDist);
                 Debug.DrawRay(transform.position + Vector3.up * 0.5f, dir.normalized, Color.green);
             }
-            anim.SetFloat("speed", _stat.MoveSpeed);
+            //Animator anim = GetComponent<Animator>();
+            //anim.SetFloat("speed", _stat.MoveSpeed);
         }
+    }
+    void UpdateSkill()
+    {
+        //Animator anim = GetComponent<Animator>();
+        Debug.Log("공격!");
+        //anim.SetBool("Attack", true);
+    }
+    void OnHitEvent()
+    {
+        //Animator anim = GetComponent<Animator>();
+        Debug.Log("OnHitEvent");
+        //anim.SetBool("Attack", false);
+        State = PlayerState.Moving;
     }
     void UpdateIdle()
     {
-        anim.SetFloat("speed", 0);
+        //Animator anim = GetComponent<Animator>();
+        //anim.SetFloat("speed", 0);
     }
 
     #region 키보드 움직임
@@ -232,14 +289,27 @@ public class PlayerController : MonoBehaviour
             transform.position += Vector3.right * Time.deltaTime * _stat.MoveSpeed;
         }
         _moveToDest = false;//클릭 방식으로 이동 불가
-        anim.SetFloat("speed", _stat.MoveSpeed);
+        //Animator anim = GetComponent<Animator>();
+        //anim.SetFloat("speed", _stat.MoveSpeed);
 
         if (Input.GetKeyUp(KeyCode.None))
         {
-            _state = PlayerState.Idle;
+            State = PlayerState.Idle;
         }
     }
     #endregion
+    void OnMouseEvent(Define.MouseEvent evt)
+    {
+        switch (State) 
+        {
+            case PlayerState.Idle:
+                OnMouseEvent_IdleRun(evt);
+                break;
+            case PlayerState.Moving:
+                OnMouseEvent_IdleRun(evt);
+                break;
+         }
+    }
 
     GameObject _lockTarget;
     int _mask = (1 << (int)Define.Layer.Ground | 1 << (int)Define.Layer.Monster);
@@ -250,7 +320,7 @@ public class PlayerController : MonoBehaviour
         //프레스 기능을 사용하고 싶다면 삭제
         //if (evt != Define.MouseEvent.Click)
         //    return;
-        if (_state == PlayerState.Die)
+        if (State == PlayerState.Die)
         {
             return;
         }
@@ -269,7 +339,7 @@ public class PlayerController : MonoBehaviour
                 if (raycastHit)
                 {
                     _destPos = hit.point;
-                    _state = PlayerState.Moving;
+                    State = PlayerState.Moving;
                 }
                 //충돌한게 몬스터이면 타겟을 몬스터로 그렇지 않으면 타겟 없음
                 if (hit.collider.gameObject.layer == (int)Define.Layer.Monster)
@@ -279,27 +349,29 @@ public class PlayerController : MonoBehaviour
                 break;
                 //누르고 있는데 타겟이 있으면 타겟으로 이동
             case Define.MouseEvent.Press:
-                if(_lockTarget != null)
-                {
-                    _destPos = _lockTarget.transform.position;
-                }
-                //근데 충돌은 했으면
-                else if (raycastHit)
-                {
-                    //총돌한 곳으로
+                //if(_lockTarget != null)
+                //{
+                //    _destPos = _lockTarget.transform.position;
+                //}
+                ////근데 충돌은 했으면
+                //else if (raycastHit)
+                //{
+                //    //총돌한 곳으로
+                //    _destPos = hit.point;
+                //}
+                if (_lockTarget == null && raycastHit)
                     _destPos = hit.point;
-                }
                 break;
             case Define.MouseEvent.PointerUp:
                 //마우스를 땟으면 그냥 타겟을 잃어버리게
-                _lockTarget = null;
+                //_lockTarget = null;
                 break;
         }
 
         if (Physics.Raycast(ray, out hit, 100f, _mask))
         {
             _destPos = hit.point;//클릭된 지점을 목적지로 지정
-            _state = PlayerState.Moving;
+            State = PlayerState.Moving;
             _moveToDest = true; //클릭 방식으로 이동 가능 하게.
         }
         if(hit.collider.gameObject.layer == (int)Define.Layer.Monster)
