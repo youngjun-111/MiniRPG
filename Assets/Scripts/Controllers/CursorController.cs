@@ -31,8 +31,10 @@ public class CursorController : MonoBehaviour
     {
         //마우스를 누르고 있으면 변경처리를 하지 않고 그냥 빠져나가면
         //락온 한 상태에서 좌표가 이동돼도 커서가 그대로되어 있게
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButton(0))
+        {
             return;
+        }
 
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 

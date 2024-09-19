@@ -45,9 +45,10 @@ public class InputManager
                 if (_pressed)
                 {
                     //프레스는 되었는데 그 시간이 클릭 정도
-                    if(Time.time < _pressedTime + 0.2f)
-                    
+                    if (Time.time < _pressedTime + 0.2f)
+                    {
                         MouseAction.Invoke(Define.MouseEvent.Click);
+                    }
                     //프레스 되었던 시간이 클릭 시간 이상이면
                     MouseAction.Invoke(Define.MouseEvent.PointerUp);
                 }

@@ -9,6 +9,7 @@ public class UIManager
     Stack<UI_Popup> _popupStack = new Stack<UI_Popup>();
     UI_Scene _sceneUI = null;
 
+  
     public GameObject Root
     {
         get
@@ -20,6 +21,23 @@ public class UIManager
             }
             return root;
         }
+    }
+    public T MakeWorldSpaceUI<T>(Transform parent = null, string name = null) where T : UI_Base
+    {
+        if (string.IsNullOrEmpty(name))
+            name = typeof(T).Name;
+
+        GameObject go = Managers.Resources.Instantiate($"UI/WorldSpace/{name}");
+        if (parent != null)
+        {
+            go.transform.SetParent(parent);
+        }
+
+        Canvas canvas = go.GetOrAddComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+        canvas.worldCamera = Camera.main;
+
+        return Util.GetOrAddComponent<T>(go);
     }
 
     //팝업 UI를 생성해주는 함수(매개변수의 타입을 미리 결정하지 않고, 사용 시 결정)

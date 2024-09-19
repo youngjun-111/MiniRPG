@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -26,23 +26,21 @@ public class PlayerController : MonoBehaviour
             switch (_state)
             {
                 case PlayerState.Die:
-                    anim.SetBool("Attack", false);
                     break;
                 case PlayerState.Idle:
-                    anim.SetFloat("speed", 0);
-                    anim.SetBool("Attack", false);
+                    anim.CrossFade("WAIT", 0.1f);
                     break;
                 case PlayerState.Moving:
-                    anim.SetFloat("speed", _stat.MoveSpeed);
-                    anim.SetBool("Attack", false);
+                    anim.CrossFade("RUN", 0.1f);
                     break;
                 case PlayerState.Skill:
-                    anim.SetBool("Attack", true);
+                    anim.CrossFade("ATTACK", 0.1f, -1, 0);
                     break;
             }
         }
     }
 
+    bool _stopSkill = false;
     //커서컴트롤러로 이동
     //Texture2D _attackIcon;
     //Texture2D _handIcon;
@@ -67,6 +65,9 @@ public class PlayerController : MonoBehaviour
         //마우스 이동 인풋 구독
         Managers.Input.MouseAction -= OnMouseEvent;
         Managers.Input.MouseAction += OnMouseEvent;
+
+        //hpbar 생성
+        Managers.UI.MakeWorldSpaceUI<UI_HPBar>(transform);
 
         //시험 용으로 써본것들 UI는 제대로 나옴
         //for (int i = 0; i < 5; i++)
@@ -171,11 +172,11 @@ public class PlayerController : MonoBehaviour
     void UpdateMoving()
     {
         //몬스터가 내 사정거리보다 가까우면 공격
-        if(_lockTarget != null)
+        if (_lockTarget != null)
         {
             _destPos = _lockTarget.transform.position;
             float distance = (_destPos - transform.position).magnitude;
-            if(distance <= 1)
+            if (distance <= 1)
             {
                 State = PlayerState.Skill;
                 return;
@@ -199,7 +200,7 @@ public class PlayerController : MonoBehaviour
                 //즉, 이동 할 수 없는 구역이니까 멈춤
                 if (Physics.Raycast(transform.position, dir, 1f, LayerMask.GetMask("Block")))
                 {
-                    if(Input.GetMouseButton(0) == false)
+                    if (Input.GetMouseButton(0) == false)
                     {
                         State = PlayerState.Idle;
                     }
@@ -220,13 +221,35 @@ public class PlayerController : MonoBehaviour
         //Animator anim = GetComponent<Animator>();
         Debug.Log("공격!");
         //anim.SetBool("Attack", true);
+        if(_lockTarget != null)
+        {
+            Vector3 dir = _lockTarget.transform.position - transform.position;
+            Quaternion quat = Quaternion.LookRotation(dir);
+            transform.rotation = Quaternion.Lerp(transform.rotation, quat, 20 * Time.deltaTime);
+        }
     }
     void OnHitEvent()
     {
-        //Animator anim = GetComponent<Animator>();
         Debug.Log("OnHitEvent");
+        //_Temp
+        if(_lockTarget != null)
+        {
+            Stat targetStat = _lockTarget.GetComponent<Stat>();
+            Stat myStat = GetComponent<Stat>();
+            int damage = Mathf.Max(0, myStat.Attack - targetStat.Defence);
+            Debug.Log("Hit");
+            targetStat.Hp -= damage;
+        }
+        //Animator anim = GetComponent<Animator>();
+        if (_stopSkill)
+        {
+            State = PlayerState.Idle;
+        }
+        else
+        {
+            State = PlayerState.Skill;
+        }
         //anim.SetBool("Attack", false);
-        State = PlayerState.Moving;
     }
     void UpdateIdle()
     {
@@ -300,7 +323,7 @@ public class PlayerController : MonoBehaviour
     #endregion
     void OnMouseEvent(Define.MouseEvent evt)
     {
-        switch (State) 
+        switch (State)
         {
             case PlayerState.Idle:
                 OnMouseEvent_IdleRun(evt);
@@ -308,7 +331,14 @@ public class PlayerController : MonoBehaviour
             case PlayerState.Moving:
                 OnMouseEvent_IdleRun(evt);
                 break;
-         }
+            case PlayerState.Skill:
+                //마우스를 띄었을 때
+                if(evt == Define.MouseEvent.PointerUp)
+                {
+                    _stopSkill = true;
+                }
+                break;
+        }
     }
 
     GameObject _lockTarget;
@@ -340,14 +370,19 @@ public class PlayerController : MonoBehaviour
                 {
                     _destPos = hit.point;
                     State = PlayerState.Moving;
+                    _stopSkill = false;//이때는 아직 아이들일지 재공격일지는 모름...
                 }
                 //충돌한게 몬스터이면 타겟을 몬스터로 그렇지 않으면 타겟 없음
                 if (hit.collider.gameObject.layer == (int)Define.Layer.Monster)
+                {
                     _lockTarget = hit.collider.gameObject;
+                }
                 else
+                {
                     _lockTarget = null;
+                }
                 break;
-                //누르고 있는데 타겟이 있으면 타겟으로 이동
+            //누르고 있는데 타겟이 있으면 타겟으로 이동
             case Define.MouseEvent.Press:
                 //if(_lockTarget != null)
                 //{
@@ -360,11 +395,15 @@ public class PlayerController : MonoBehaviour
                 //    _destPos = hit.point;
                 //}
                 if (_lockTarget == null && raycastHit)
+                {
                     _destPos = hit.point;
+                }
                 break;
             case Define.MouseEvent.PointerUp:
                 //마우스를 땟으면 그냥 타겟을 잃어버리게
                 //_lockTarget = null;
+                //띄었다면 클릭으로 한번 공격처리
+                _stopSkill = true;
                 break;
         }
 
@@ -374,15 +413,14 @@ public class PlayerController : MonoBehaviour
             State = PlayerState.Moving;
             _moveToDest = true; //클릭 방식으로 이동 가능 하게.
         }
-        if(hit.collider.gameObject.layer == (int)Define.Layer.Monster)
+        if (hit.collider.gameObject.layer == (int)Define.Layer.Monster)
         {
             Debug.Log("몬스터");
         }
-        else if(hit.collider.gameObject.layer == (int)Define.Layer.Ground)
+        else if (hit.collider.gameObject.layer == (int)Define.Layer.Ground)
         {
             Debug.Log("바닥");
         }
     }
     #endregion
-
 }
