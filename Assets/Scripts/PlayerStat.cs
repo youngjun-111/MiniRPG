@@ -28,8 +28,9 @@ public class PlayerStat : Stat
                 if (_exp < stat.totalExp)
                     break;
                 //위 조건에 걸리지 않았으면 레벨업임
-                level++; ;
+                level++;
             }
+            //만약 올라간 레벨이 현재 레벨이 아닐경우 레벨업을 해줘서 갱신시켜줌
             if(level != Level)
             {
                 Debug.Log("레벨업");

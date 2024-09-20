@@ -37,9 +37,12 @@ public class MonsterContorller : BaseController
         //GameObject player = GameObject.FindGameObjectWithTag("Player");
         GameObject player = Managers.game.GetPlayer();
         if (player == null)
+        {
             return;
+        }
+
         float distance = (player.transform.position - transform.position).magnitude;
-        if(distance <= _scanRange)
+        if (distance <= _scanRange)
         {
             _lockTarget = player;
             State = Define.State.Moving;
@@ -51,14 +54,14 @@ public class MonsterContorller : BaseController
     {
         Debug.Log("몬스터 이동");
         //플레이어가 널이 아니라면
-        if(_lockTarget != null)
+        if (_lockTarget != null)
         {
             //위치를 플레이어를향해 이동
             _destPos = _lockTarget.transform.position;
             //거리 계산
             float distance = (_destPos - transform.position).magnitude;
             //계산한 거리가 공격 사거리보다 크다면 navAgent를 이용하여 플레이어를 향해 이동
-            if(distance <= _attackRange)
+            if (distance <= _attackRange)
             {
                 NavMeshAgent navAgent = gameObject.GetOrAddComponent<NavMeshAgent>();
                 navAgent.SetDestination(transform.position);
@@ -69,7 +72,7 @@ public class MonsterContorller : BaseController
         //
         Vector3 dir = _destPos - transform.position;
 
-        if(dir.magnitude < 0.1f)
+        if (dir.magnitude < 0.1f)
         {
             State = Define.State.Idle;
         }
@@ -86,7 +89,7 @@ public class MonsterContorller : BaseController
     {
         Debug.Log("몬스터 공격");
 
-        if(_lockTarget != null)
+        if (_lockTarget != null)
         {
             Vector3 dir = _lockTarget.transform.position - transform.position;
             Quaternion quat = Quaternion.LookRotation(dir);
@@ -96,7 +99,7 @@ public class MonsterContorller : BaseController
 
     void OnHitEvent()
     {
-        if(_lockTarget != null)
+        if (_lockTarget != null)
         {
             Stat targetStat = _lockTarget.GetComponent<Stat>();
 
@@ -131,7 +134,7 @@ public class MonsterContorller : BaseController
                 Managers.game.Despawn(targetStat.gameObject);
                 State = Define.State.Idle;
             }
-            
+
         }
 
     }

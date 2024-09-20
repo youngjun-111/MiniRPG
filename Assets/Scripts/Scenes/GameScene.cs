@@ -29,7 +29,12 @@ public class GameScene : BaseScene
         //생성된 플레이어에게 카메라를 붙여줌
         Camera.main.gameObject.GetOrAddComponent<CameraController>().SetPlayer(player);
         //몬스터를 소환 해줌
-        Managers.game.Spawn(Define.WorldObject.Monster, "Knight");
+        //Managers.game.Spawn(Define.WorldObject.Monster, "Knight");
+        //몬스터를 오브젝트 풀링으로 해서 여러마리 소환하기위해서 게임오브젝트를 생성해주고,
+        //생성한 오브젝트에 풀링해준 스크립트를 붙여준다
+        GameObject go = new GameObject { name = "SpawningPool" };
+        SpawningPool pool = go.GetOrAddComponent<SpawningPool>();
+        pool.SetKeepMonsterCount(5);
     }
 
     public override void Clear()

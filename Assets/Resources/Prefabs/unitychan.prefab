@@ -977,11 +977,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b591ad5f02f3bb441b64d7be6cc41dfb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _lavel: 1
+  _level: 0
   _hp: 100
   _maxHp: 100
-  _attack: 100
-  _defence: 5
+  _attack: 1
+  _defence: 1
   _moveSpeed: 5
   _exp: 0
   _gold: 0

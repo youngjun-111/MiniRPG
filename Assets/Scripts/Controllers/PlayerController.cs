@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine.Playables;
 
 
 
@@ -110,8 +112,8 @@ public class PlayerController : BaseController
         }
         //방향
         Vector3 dir = _destPos - transform.position;
+        dir.y = 0;
         Debug.Log(dir);
-
 
         //거리 distance
         if (dir.magnitude < 0.1f)
