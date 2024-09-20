@@ -23,6 +23,13 @@ public class GameScene : BaseScene
         //    Managers.Resources.Instantiate("unitychan");
         //}
         gameObject.GetOrAddComponent<CursorController>();
+        //게임 매니저를 통해 생성을 시켜줌 content영역
+        //플레이어를 생성
+        GameObject player = Managers.game.Spawn(Define.WorldObject.Player, "unitychan");
+        //생성된 플레이어에게 카메라를 붙여줌
+        Camera.main.gameObject.GetOrAddComponent<CameraController>().SetPlayer(player);
+        //몬스터를 소환 해줌
+        Managers.game.Spawn(Define.WorldObject.Monster, "Knight");
     }
 
     public override void Clear()

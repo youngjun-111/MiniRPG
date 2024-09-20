@@ -14,4 +14,9 @@ public static class Extension
     {
         return Util.GetOrAddComponent<T>(go);
     }
+    //플레이어가 사라졋으면 오류가 나지 않게 하기위한 작업
+    public static bool IsValid(this GameObject go)
+    {
+        return go != null && go.activeSelf;
+    }
 }

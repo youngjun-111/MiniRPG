@@ -17,9 +17,13 @@ public class CameraController : MonoBehaviour
     {
         if (_mode == Define.CameraMode.QuarterView)
         {
+            if(_player.IsValid() == false)
+            {
+                return;
+            }
             RaycastHit hit;
             //플레이어에서 카메라 방향으로 레이를 발사(플레이어위치, 카메라위치, out hit,방향, 충돌 가능한 레이어)
-            if (Physics.Raycast(_player.transform.position, _delta, out hit, _delta.magnitude, LayerMask.GetMask("Wall")))
+            if (Physics.Raycast(_player.transform.position, _delta, out hit, _delta.magnitude, LayerMask.GetMask("Block")))
             {
                 float dist = (hit.point - _player.transform.position).magnitude * 0.8f;//거리를 0.8를 곱해서 줄여줌
                 transform.position = _player.transform.position + _delta.normalized * dist;//카메라의 위치 변경
@@ -30,6 +34,12 @@ public class CameraController : MonoBehaviour
                 transform.LookAt(_player.transform);
             }
         }
+    }
+
+    //플레이어를 찾아서 플레이어에게 카메라를 붙여주는 함수
+    public void SetPlayer(GameObject player)
+    {
+        _player = player;
     }
 
     //카메라의 시야가 차단되었을 경우 사야를 확보 할수 있게

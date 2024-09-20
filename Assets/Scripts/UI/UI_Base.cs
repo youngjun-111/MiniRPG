@@ -10,6 +10,7 @@ public abstract class UI_Base : MonoBehaviour
     {
         Init();
     }
+
     //상속 받는애만 쓰게하기 위해 protected로 만들어줌
     protected Dictionary<Type, UnityEngine.Object[]> _objects = new Dictionary<Type, UnityEngine.Object[]>();
 

@@ -9,8 +9,16 @@ public class Managers : MonoBehaviour
     //싱글톤을 은닉하고 프로퍼티로하여 사용 하기 위해 private로 만들어줌
     static Managers s_instance;//유일성이 보장된다.
     public static Managers Instance { get { Init(); return s_instance; } }//읽기 전용 값만 불러옴
-    //이제 매니저스는 자신이 뭔가를 직접하기 보단 다른 매니저들을 관리(싱글톤을 사용하게)해주는 치프매니저라고 생각하면 된다.
-    //그래서 직접 외부에서 직급 할필요가 없어서 private으로 만들었음.
+                                                                          //이제 매니저스는 자신이 뭔가를 직접하기 보단 다른 매니저들을 관리(싱글톤을 사용하게)해주는 치프매니저라고 생각하면 된다.
+                                                                          //그래서 직접 외부에서 직급 할필요가 없어서 private으로 만들었음.
+
+    #region ContentsManager
+    GameManager _game = new GameManager();
+    //명명 규칙(1. ContentManager는 소문자)
+    public static GameManager game { get { return Instance._game; } }
+    #endregion
+
+    #region CoreManager
     InputManager _input = new InputManager();
     ResourceManager _resource = new ResourceManager();
     UIManager _ui = new UIManager();
@@ -18,7 +26,7 @@ public class Managers : MonoBehaviour
     SoundManager _sound = new SoundManager();
     PoolManager _pool = new PoolManager();
     DataManager _data = new DataManager();
-    //플레이어 인풋 매니저
+    //플레이어 인풋 매니저 명명 규칙(2. CoreManager는 대문자)
     public static InputManager Input { get { return Instance._input; } }
     //리소스 매니저
     public static ResourceManager Resources { get { return Instance._resource; } }
@@ -32,6 +40,7 @@ public class Managers : MonoBehaviour
     public static PoolManager Pool { get { return Instance._pool; } }
     //데이타 매니저
     public static DataManager Data { get { return Instance._data; } }
+    #endregion
     void Start()
     {
         Init();

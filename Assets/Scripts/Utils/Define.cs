@@ -53,4 +53,19 @@ public class Define
         Ground = 9,
         Block = 10,
     }
+
+    public enum State
+    {
+        Die,
+        Moving,
+        Idle,
+        Skill,
+    }
+
+    public enum WorldObject
+    {
+        Unknown,
+        Player,
+        Monster,
+    }
 }
